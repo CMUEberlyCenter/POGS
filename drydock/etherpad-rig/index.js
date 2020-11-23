@@ -1,9 +1,24 @@
+'use strict';
+
+var finalhandler = require('finalhandler');
 var connect = require('connect');
 var serveStatic = require('serve-static');
 var api = require('etherpad-lite-client');
+var fs = require('fs');
+var http = require('http');
+
+var settings = {};
+var serve = serveStatic(__dirname, { 'index': ['index.html', 'index.htm'] });
+var etherData={
+  "groups": {},
+  "authors": {}
+};
 
 /**
  * https://etherpad.org/doc/v1.8.4/
+ * https://blog.etherpad.org/2019/03/18/updating-etherpad-for-modern-javascript/
+ * https://github.com/expressjs/serve-static
+ * https://stackabuse.com/reading-and-writing-json-files-with-node-js/
  */
 class EtherpadRig {
 
@@ -11,30 +26,49 @@ class EtherpadRig {
    *
    */
   constructor () {
-    this.group="";
-    this.etherpad = api.connect({
-      apikey: '34dd399e601fc3abf93127ae209749d9def3ddc29187eaf8a4bcd745680b71d1',
-      host: 'localhost',
-      port: 9001
+    this.padsInitialized=false;
+  }
+
+  /**
+   *
+   */
+  createGroup (aGroupName) {
+    console.log ("createGroup ()");
+
+    return new Promise ((resolve, reject) => {
+      this.etherpad.createGroup(function (error, data) {
+        if (error) {
+          console.error('Error creating group: ' + error.message);
+          reject (error.message);
+        } else { 
+          console.log('New group created: ' + data.groupID);
+          etherData.groups [data.groupID]={
+            "name": aGroupName,
+            "id": data.groupID,
+            "pads": []
+          };
+          resolve(data);
+        }
+      });
     });
   }
 
   /**
    *
    */
-  createGroup () {
-    console.log ("createGroup ()");
-
-    this.etherpad.createGroup(function (error, data) {
-      if (error) {
-        console.error('Error creating group: ' + error.message);
-      } else { 
-        console.log('New group created: ' + data.groupID);
-        etherpad.group=data.groupID;
-
-        etherpad.listGroups ();
+  getDefaultGroupID () {
+    for (var groupName in etherData.groups) {
+      if (etherData.groups.hasOwnProperty(groupName)) {
+        let group=etherData.groups [groupName];
+        if (group.name) {
+          if (group.name=="Default") {
+            return (group.id);
+          }
+        }      
       }
-    });
+    }
+
+    return (null);
   }
 
   /**
@@ -43,17 +77,23 @@ class EtherpadRig {
   createAuthor (anAuthor) {
     console.log ("createAuthor ("+anAuthor+")");
 
-    let args = {
-      name: anAuthor
-    }
-
-    this.etherpad.createAuthor(function (error, data) {
-      if (error) {
-        console.error('Error creating group: ' + error.message);
-      } else { 
-        console.log('New author created: ' + data.authorID);
-        
+    return new Promise ((resolve, reject) => {
+      let args = {
+        name: anAuthor
       }
+
+      this.etherpad.createAuthor(function (error, data) {
+        if (error) {
+          console.error('Error creating group: ' + error.message);
+          reject (error.message);
+        } else { 
+          console.log('New author created: ' + data.authorID);
+          etherData.authors [data.authorID]={
+            "name": anAuthor
+          };
+          resolve (data);
+        }
+      });
     });
   }
 
@@ -61,40 +101,49 @@ class EtherpadRig {
    *
    */
   createPad (aPadName) {
-    console.log ("createPad ("+aPadName+")");
+    console.log ("createPad ("+this.getDefaultGroupID ()+","+aPadName+")");
 
-    let args = {
-      padName: aPadName,
-      text: '',
-    };
+    return new Promise ((resolve, reject) => {
+      let args = {
+        groupID: this.getDefaultGroupID (),
+        padID: aPadName,
+        text: '',
+      };
 
-    this.etherpad.createPad(args, function(error, data) {
-      if (error) { 
-        console.error('Error creating pad: ' + error.message);
-      } else {
-        console.log('New pad created: ' + data.padID);
-      }
+      this.etherpad.createPad(args, function(error, data) {
+        if (error) { 
+          console.error('Error creating pad: ' + error.message);
+          reject (error.message);;
+        } else {
+          //console.log('New pad created: ' + JSON.stringify (data));
+          resolve (data);
+        }
+      });
     });
   }
 
   /**
    *
    */
-  createGroupPad (aPadName) {
+  createGroupPad (aGroupName,aPadName) {
     console.log ("createGroupPad ("+aPadName+")");
 
-    let args = {
-      groupID: this.group,
-      padName: aPadName,
-      text: '',
-    };
+    return new Promise ((resolve, reject) => {
+      let args = {
+        groupID: aGroupName,
+        padName: aPadName,
+        text: '',
+      };
 
-    this.etherpad.createGroupPad(args, function(error, data) {
-      if (error) { 
-        console.error('Error creating pad: ' + error.message);
-      } else {
-        console.log('New pad created: ' + data.padID);
-      }
+      this.etherpad.createGroupPad(args, function(error, data) {
+        if (error) { 
+          console.error('Error creating pad: ' + error.message);
+          reject (error.message);
+        } else {
+          //console.log('New pad created: ' + JSON.stringify (data));
+          resolve(data);
+        }
+      });
     });
   }  
 
@@ -104,41 +153,130 @@ class EtherpadRig {
   listGroups () {
     console.log ("listGroups ()");
 
-    let args = {};
+    return new Promise ((resolve, reject) => {
+      let args = {};
 
-    this.etherpad.listAllGroups(args, function(error, data) {
-      if (error) { 
-        console.error('Error listing pads: ' + error.message);
-      } else {
-        console.log('Pad data: ' + JSON.stringify (data.groupIDs));
-      }
+      this.etherpad.listAllGroups(args, function(error, data) {
+        if (error) { 
+          console.error('Error listing groups: ' + error.message);
+          reject (null);
+        } else {
+          //console.log('Pad data: ' + JSON.stringify (data.groupIDs));
+
+          for (let i=0;i<data.groupIDs.length;i++) {
+            // Create an object for every group we find, assuming it doesn't already exist
+            let groupID=data.groupIDs [i];
+
+            if (etherData.groups.hasOwnProperty(groupID)==false) {
+              etherData.groups [groupID] = {
+                "pads": {}
+              };
+            }
+          }
+          
+          resolve (data);
+        }
+      });
     });
   }  
 
   /**
    *
    */
-  listPads () {
-    console.log ("listPads ()");
+  listPads (aGroup) {
+    console.log ("listPads ("+aGroup+")");
 
-    let args = {
-      groupID: this.group
-    };
+    return new Promise ((resolve, reject) => {
+      let args = {};
 
-    this.etherpad.listPads(args, function(error, data) {
-      if (error) { 
-        console.error('Error listing pads: ' + error.message);
-      } else {
-        console.log('Pad data: ' + data);
+      if (aGroup) {
+        args = {
+          groupID: aGroup
+        };
       }
+
+      this.etherpad.listPads(args, function(error, data) {
+        if (error) { 
+          console.error('Error listing pads: ' + error.message);
+          reject (error.message);
+        } else {
+          console.log('Pad data: ' + JSON.stringify (data));
+
+          resolve (data);
+        }
+      });
     });
   }
 
   /**
    *
    */
+  initPads () {
+    if (this.padsInitialized==false) {
+      console.log ("initPads ()");
+      etherpad.createPad ("Default").catch (() => {});
+      this.padsInitialized=true;
+    }
+  }
+
+  /**
+   *
+   */
+  initGroups () {
+    console.log ("initGroups ()");
+
+    this.listGroups ().then (() => {
+      for (var group in etherData.groups) {
+        if (etherData.groups.hasOwnProperty(group)) {           
+          etherpad.listPads (group).then (() => {
+            etherpad.initPads ();
+          });
+        }
+      }
+    }).catch((error) => { console.log (error); });
+  }
+
+  /**
+   *
+   */
   init () {
-    this.createGroup ();
+    console.log ("init ()");
+
+    let rawSettings = fs.readFileSync('settings.json');
+    settings = JSON.parse(rawSettings);
+
+    console.log (settings);
+    
+    this.etherpad = api.connect({
+      apikey: settings.apikey,
+      host: settings.host,
+      port: settings.port
+    });
+
+    this.createAuthor ("Monitor").then (() => {
+      this.createGroup ("Default").then (() => {
+        etherpad.initGroups ();
+      }).catch (() => {
+        // This is most likely an error indicating the group already exists, we should proceed anyway
+        etherpad.initGroups ();
+      });
+    }).catch(()=>{
+      this.createGroup ("Default").then (() => {
+        etherpad.initGroups ();
+      }).catch (() => {
+        // This is most likely an error indicating the group already exists, we should proceed anyway
+        etherpad.initGroups ();
+      });      
+    });
+  }
+
+  /**
+   *
+   */
+  writeDefault (req,res) {
+    res.writeHead(200, {'Content-Type': 'text/html'});
+    res.write("<html><body>Default Page</body></html>");
+    res.end();
   }
  
   /**
@@ -149,15 +287,25 @@ class EtherpadRig {
 
     this.init ();
 
-    /*
-    this.createPad ("Woolley");
+    http.createServer(function (req, res) {
+      console.log (req.url);
 
-    this.listPads ();
-    */
+      if (req.url=="/settings") {
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.write(JSON.stringify(settings));
+        res.end();
+        return;  
+      }  
 
-    connect().use(serveStatic(__dirname)).listen(9000, function(){
-      console.log('Server running on 9000...');
-    });
+      if (req.url=="/data") {
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.write(JSON.stringify(etherData));
+        res.end();
+        return;  
+      }  
+      
+      serve(req, res, finalhandler(req, res));
+    }).listen(9000);
   }
 }
 

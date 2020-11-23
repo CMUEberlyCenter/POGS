@@ -21,13 +21,6 @@
     flex-direction: column;
   }
 
-  .config {
-    /*flex: 0;*/
-    height: 150px;
-    background: #ecebeb;
-    padding: 6px;
-  }
-
   .etherpad {
     border: 0px solid grey;
     flex: 1;
@@ -50,126 +43,82 @@
     background: #a09f9f;
   }  
 
-  .button {
-    box-shadow:inset 0px 1px 0px 0px #54a3f7;
-    background:linear-gradient(to bottom, #007dc1 5%, #0061a7 100%);
-    background-color:#007dc1;
-    border-radius:3px;
-    border:1px solid #124d77;
-    display:inline-block;
-    cursor:pointer;
-    color:#ffffff;
-    font-family:Arial;
-    font-size:13px;
-    padding:6px 24px;
-    text-decoration:none;
-    text-shadow:0px 1px 0px #154682;
+  .scrim {
+    padding: 0px;
+    margin: 0px;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    background: #cccccc;
   }
 
-  .button:hover {
-    background:linear-gradient(to bottom, #0061a7 5%, #007dc1 100%);
-    background-color:#0061a7;
-  }
-
-  .button:active {
-    position:relative;
-    top:1px;
+  .loading {
+    width: 100px;
+    height: 24px;
   }
 
 </style>
 <script>
-
-  var nrSessions=1;
-  var sessionName="New Session";
-
-  /**
-   *
-   */
-  function newSession () {
-    console.log ("newSession ()");
-
-    $("#session").hide();
-    $("#newsession").show();
-    $("#playsession").hide();
-    $("#deletesession").hide();
-  }
+  var settings={};
+  var session="";
+  var username="";
 
   /**
    *
    */
-  function playSession () {
-    console.log ("playSession ()");
-
-    $("#session").hide();
-    $("#newsession").hide();
-    $("#playsession").show();
-    $("#deletesession").hide();
-  }
-
-  /**
-   *
-   */
-  function deleteSession () {
-    console.log ("deleteSession ()");
-
-    $("#session").hide();
-    $("#newsession").hide();
-    $("#playsession").hide();
-    $("#deletesession").show();   
-  } 
-
-  /**
-   *
-   */
-  function changeNrSessions (e) {
-    if ($("#sessioncount").val()!="") {
-      nrSessions=parseInt ($("#sessioncount").val());
+  function getQueryVariable(variable) {
+    var query = window.location.search.substring(1);
+    var vars = query.split('&');
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        if (decodeURIComponent(pair[0]) == variable) {
+            return decodeURIComponent(pair[1]);
+        }
     }
-
-    console.log ("changeNrSessions ("+nrSessions+")");
-  }
-
-  /**
-   *
-   */
-  function changeSessionName (e) {
-    if ($("#sessionname").val()!="") {
-      sessionName=$("#sessionname").val();
-    }
-
-    console.log ("changeSessionName ("+sessionName+")");
+    console.log('Query variable %s not found', variable);
   }  
 
   /**
    *
    */
-  function startSessions () {
-    console.log ("startSessions ()");
+  function init () {
+    console.log ("init ()");
 
-    $("#etherpad").attr("src","http://192.168.0.104:9001/p/test");
+    console.log(window.location.search);
+
+    $.ajax({
+      type: "GET",
+      url: "/settings",
+      success: function (data) {
+        //console.log (data);
+        settings=data;
+        session=getQueryVariable ("session");
+        username=getQueryVariable ("username");
+        
+        $("#scrim").hide ();
+
+        var etherpadURL="http://"+settings.host+":"+settings.port+"/p/"+session+"?userName="+username;
+
+        $("#etherpad").attr("src",etherpadURL);        
+      }
+    });
   }
 </script>
 </head>
-<body>
+<body onLoad="init ()">
   <div id="menu" class="menu">
-    <div class="icon" onclick="newSession ()">Record Session</div>
-    <div class="icon" onclick="playSession ()">Play Session</div>
-    <div class="icon" onclick="deleteSession ()">Delete Session</div>
+    text to replicate
   </div>
   <div id="right" class="right">
-    <div id="session" class="config"></div>
-    <div id="newsession" class="config" style="display: none">
-      Nr of sesssions/users (max 4): 
-      <input type="text" id="sessioncount" onkeydown="changeNrSessions()" value="1" /><br>
-      Session/Experiment name:
-      <input type="text" id="sessionname" onkeydown="changeSessionName()" value="New Session" /><br>
-      <button class="button" onclick="startSessions()">Start ...</button>
-    </div>
-    <div id="playsession" class="config" style="display: none">Play Session</div>
-    <div id="deletesession" class="config" style="display: none">Delete Session</div>
     <div id="pad" class="etherpad">
       <iframe id="etherpad" frameborder="0" src="" width="100%" height="100%" sandbox="allow-same-origin allow-scripts">
     </div>
+  </div>
+
+  <div id="scrim" class="scrim">
+    <div class="loading">Loading ...</div>
   </div>
 </body>
 </html>

@@ -26,6 +26,7 @@
     height: 150px;
     background: #ecebeb;
     padding: 6px;
+    margin: 4px;
   }
 
   .etherpad {
@@ -76,11 +77,56 @@
     top:1px;
   }
 
+  .scrim {
+    padding: 0px;
+    margin: 0px;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    background: #cccccc;
+  }
+
+  .loading {
+    width: 100px;
+    height: 24px;
+  }
+
+  .textable {
+    border: 1px solid #d6d4d4;
+    background: white;
+    margin: 0px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    padding: 2px;
+    width: 350px;
+    max-height: 400px;
+    min-height: 55px;
+    resize: vertical;
+  }
+
+  .textinputrow {
+    flex: 1;
+    padding: 2px;
+  }
+
+  .sessioninfo {
+    height: 24px;
+    margin: 0px;
+    flex: 0;
+  }
+
 </style>
 <script>
 
   var nrSessions=1;
   var sessionName="New Session";
+  var settings={};
+  var name1="";
+  var name2="";
+  var name3="";
+  var name4="";  
 
   /**
    *
@@ -109,8 +155,8 @@
   /**
    *
    */
-  function deleteSession () {
-    console.log ("deleteSession ()");
+  function manageSessions () {
+    console.log ("manageSessions ()");
 
     $("#session").hide();
     $("#newsession").hide();
@@ -121,12 +167,67 @@
   /**
    *
    */
+  function confNrSessions () {
+    if (nrSessions==1) {
+      $("#name1container").show ();
+      $("#name2container").hide ();
+      $("#name3container").hide ();
+      $("#name4container").hide ();
+
+      $("#session1url").show ();
+      $("#session2url").hide ();
+      $("#session3url").hide ();
+      $("#session4url").hide ();      
+    }
+
+    if (nrSessions==2) {
+      $("#name1container").show ();
+      $("#name2container").show ();
+      $("#name3container").hide ();
+      $("#name4container").hide ();
+
+      $("#session1url").show ();
+      $("#session2url").show ();
+      $("#session3url").hide ();
+      $("#session4url").hide ();        
+    }
+
+    if (nrSessions==3) {
+      $("#name1container").show ();
+      $("#name2container").show ();
+      $("#name3container").show ();
+      $("#name4container").hide ();
+
+      $("#session1url").show ();
+      $("#session2url").show ();
+      $("#session3url").show ();
+      $("#session4url").hide ();        
+    }
+
+    if (nrSessions==4) {
+      $("#name1container").show ();
+      $("#name2container").show ();
+      $("#name3container").show ();
+      $("#name4container").show ();
+
+      $("#session1url").show ();
+      $("#session2url").show ();
+      $("#session3url").show ();
+      $("#session4url").show ();        
+    }   
+  }
+
+  /**
+   *
+   */
   function changeNrSessions (e) {
     if ($("#sessioncount").val()!="") {
       nrSessions=parseInt ($("#sessioncount").val());
     }
 
     console.log ("changeNrSessions ("+nrSessions+")");
+
+    confNrSessions ();         
   }
 
   /**
@@ -134,7 +235,7 @@
    */
   function changeSessionName (e) {
     if ($("#sessionname").val()!="") {
-      sessionName=$("#sessionname").val();
+      sessionName=$("#sessionname").val().replace(/ /g,"_").toLowerCase();
     }
 
     console.log ("changeSessionName ("+sessionName+")");
@@ -143,33 +244,141 @@
   /**
    *
    */
+  function nextNames () {
+    console.log ("nextNames ()");
+
+  }
+
+  /**
+   *
+   */
+  function nextStart () {
+    console.log ("startStart ()");
+
+    changeSessionName (null);
+
+    name1=$("#name1").val().replace(/ /g,"_").toLowerCase();
+    name2=$("#name2").val().replace(/ /g,"_").toLowerCase();
+    name3=$("#name3").val().replace(/ /g,"_").toLowerCase();
+    name4=$("#name4").val().replace(/ /g,"_").toLowerCase();
+
+    if (nrSessions==1) {
+      if (name1=="") {
+        alert ("Please fill in a name");
+        return;
+      }
+    }
+
+    if (nrSessions==2) {
+      if ((name1=="") || (name2=="")) {
+        alert ("Please make sure all names are filled in");
+        return;
+      }
+    }
+
+    if (nrSessions==3) {
+      if ((name1=="") || (name2=="") || (name3=="")) {
+        alert ("Please make sure all names are filled in");
+        return;
+      }
+    }
+
+    if (nrSessions==4) {
+      if ((name1=="") || (name2=="") || (name3=="") || (name4=="")) {
+        alert ("Please make sure all names are filled in");
+        return;
+      }
+    }
+
+    $("#session1url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name1);
+    $("#session2url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name2);
+    $("#session3url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name3);
+    $("#session4url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name4);
+  }
+
+  /**
+   *
+   */
   function startSessions () {
     console.log ("startSessions ()");
 
-    $("#etherpad").attr("src","http://192.168.0.104:9001/p/test");
+    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+sessionName+"?userName=Monitor";
+
+    $("#sessioninfo").text(monitorURL);
+
+    $("#etherpad").attr("src",monitorURL);
   }
+
+  /**
+   *
+   */
+  function init () {
+    console.log ("init ()");
+
+    newSession ();
+    confNrSessions ();
+
+    $.ajax({
+      type: "GET",
+      url: "/settings",
+      success: function (data) {
+        settings=data;
+        console.log (settings);
+        $("#scrim").hide ();
+      }
+    });
+  }
+
 </script>
 </head>
-<body>
+<body onLoad="init ()">
   <div id="menu" class="menu">
     <div class="icon" onclick="newSession ()">Record Session</div>
-    <div class="icon" onclick="playSession ()">Play Session</div>
-    <div class="icon" onclick="deleteSession ()">Delete Session</div>
+    <div class="icon" onclick="playSession ()">Playback Session</div>
+    <div class="icon" onclick="manageSessions ()">Manage Sessions</div>
   </div>
   <div id="right" class="right">
     <div id="session" class="config"></div>
-    <div id="newsession" class="config" style="display: none">
-      Nr of sesssions/users (max 4): 
-      <input type="text" id="sessioncount" onkeydown="changeNrSessions()" value="1" /><br>
-      Session/Experiment name:
-      <input type="text" id="sessionname" onkeydown="changeSessionName()" value="New Session" /><br>
-      <button class="button" onclick="startSessions()">Start ...</button>
+    <div id="newsession" class="config" style="display: none; display: flex; flex-direction: row;">
+
+      <div style="flex:1; width: 33%;">
+        Nr of sesssions/users (max 4): 
+        <input type="number" id="sessioncount" onkeyup="changeNrSessions()" oninput="changeNrSessions()" min="1" max="4" value="1" /><br>
+        Session/Experiment name:
+        <input type="text" id="sessionname" onkeydown="changeSessionName()" value="New Session" /><br>
+        Text to reproduce:
+        <div id="text" class="textable" contenteditable="true"></div>
+        <button class="button" onclick="nextNames()">Next ...</button>
+      </div>
+
+      <div style="flex: 1; width: 33%;">
+        <div id="name1container" class="textinputrow">User 1 Name: <input type="text" id="name1" value="" /></div>
+        <div id="name2container" class="textinputrow">User 2 Name: <input type="text" id="name2" value="" /></div>
+        <div id="name3container" class="textinputrow">User 3 Name: <input type="text" id="name3" value="" /></div>
+        <div id="name4container" class="textinputrow">User 4 Name: <input type="text" id="name4" value="" /></div>
+        <button class="button" onclick="nextStart()">Next ...</button>
+      </div>
+
+      <div style="flex:1; width: 33%;">
+        <ul style="width: 100%; min-width: 500px;">
+          <li id="session1url"></li>
+          <li id="session2url"></li>
+          <li id="session3url"></li>
+          <li id="session4url"></li>
+        </ul>
+        <button class="button" onclick="startSessions()">Start</button>
+      </div>
+
     </div>
-    <div id="playsession" class="config" style="display: none">Play Session</div>
+    <div id="playsession" class="config" style="display: none">Test Session</div>
     <div id="deletesession" class="config" style="display: none">Delete Session</div>
+    <div id="sessioninfo" class="sessioninfo"></div>
     <div id="pad" class="etherpad">
-      <iframe id="etherpad" frameborder="0" src="" width="100%" height="100%" sandbox="allow-same-origin allow-scripts">
+      <iframe id="etherpad" frameborder="0" src="" width="100%" height="100%" sandbox="allow-same-origin allow-scripts"></iframe>
     </div>
+  </div>
+  <div id="scrim" class="scrim">
+    <div class="loading">Loading ...</div>
   </div>
 </body>
 </html>
