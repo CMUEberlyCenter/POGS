@@ -187,24 +187,36 @@ class EtherpadRig {
     console.log ("listPads ("+aGroup+")");
 
     return new Promise ((resolve, reject) => {
-      let args = {};
-
       if (aGroup) {
+        let args = {};
+
         args = {
           groupID: aGroup
         };
+
+        this.etherpad.listPads(args, function(error, data) {
+          if (error) { 
+            console.error('Error listing pads: ' + error.message);
+            reject (error.message);
+          } else {
+            console.log('Pad data: ' + JSON.stringify (data));
+
+            resolve (data);
+          }
+        });
+      } else {
+         let args = {};
+         this.etherpad.listAllPads(args, function(error, data) {
+          if (error) { 
+            console.error('Error listing pads: ' + error.message);
+            reject (error.message);
+          } else {
+            console.log('Pad data: ' + JSON.stringify (data));
+
+            resolve (data);
+          }
+        });
       }
-
-      this.etherpad.listPads(args, function(error, data) {
-        if (error) { 
-          console.error('Error listing pads: ' + error.message);
-          reject (error.message);
-        } else {
-          console.log('Pad data: ' + JSON.stringify (data));
-
-          resolve (data);
-        }
-      });
     });
   }
 
@@ -303,6 +315,15 @@ class EtherpadRig {
         res.end();
         return;  
       }  
+
+      if (req.url=="/pads") {
+        etherpad.listPads(null).then ((data) => {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify(data));
+          res.end();
+        });
+        return;  
+      }      
       
       serve(req, res, finalhandler(req, res));
     }).listen(9000);

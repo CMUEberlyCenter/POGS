@@ -21,6 +21,14 @@
     flex-direction: column;
   }
 
+  .list {
+    /* width: 250px; */
+    height: 100%;
+    float: left;
+    margin-left: 5px;
+    margin-right: 5px;
+  }
+
   .config {
     /*flex: 0;*/
     height: 150px;
@@ -117,6 +125,20 @@
     flex: 0;
   }
 
+  .eberlybanner {
+    /* margin: 27px; */
+    margin-left: 27px;
+    margin-top: 9px;
+    padding: 2px;
+    /* padding-top: 17px; */
+    /* background: #565656; */
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    flex: 0;
+    font-size: 24pt;
+    color: #d8d7d7;
+  }  
+
 </style>
 <script>
 
@@ -131,37 +153,77 @@
   /**
    *
    */
-  function newSession () {
+  function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  /**
+   *
+   */
+  function reset () {
+    console.log ("reset ()");
+
+    $("#sessioninfo").html("");
+    $("#etherpad").attr("src","");
+  }  
+
+  /**
+   *
+   */
+  function showNewSession () {
     console.log ("newSession ()");
+
+    reset ();
 
     $("#session").hide();
     $("#newsession").show();
     $("#playsession").hide();
-    $("#deletesession").hide();
+    $("#managesessions").hide();
   }
 
   /**
    *
    */
-  function playSession () {
+  function showPlaySession () {
     console.log ("playSession ()");
+
+    reset ();
 
     $("#session").hide();
     $("#newsession").hide();
     $("#playsession").show();
-    $("#deletesession").hide();
+    $("#managesessions").hide();
+
+    $.ajax({
+      type: "GET",
+      url: "/pads",
+      success: function (data) {
+        //console.log (data.padIDs);
+
+        $("#pads").empty();
+
+        for (var i=0;i<data.padIDs.length;i++) { 
+          $("#pads").append($('<option></option>').val(data.padIDs [i]).html(data.padIDs [i]));
+        }
+      }
+    });
   }
 
   /**
    *
    */
-  function manageSessions () {
+  function showManageSessions () {
     console.log ("manageSessions ()");
+
+    reset ();
 
     $("#session").hide();
     $("#newsession").hide();
     $("#playsession").hide();
-    $("#deletesession").show();   
+    $("#managesessions").show();   
   } 
 
   /**
@@ -312,10 +374,24 @@
   /**
    *
    */
+  function playSession () {
+    console.log ("playSession ()");
+
+    var testPad=uuidv4();
+    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&playsession="+$("#pads").val();
+
+    $("#sessioninfo").text(monitorURL);
+
+    $("#etherpad").attr("src",monitorURL); 
+  }
+
+  /**
+   *
+   */
   function init () {
     console.log ("init ()");
 
-    newSession ();
+    showNewSession ();
     confNrSessions ();
 
     $.ajax({
@@ -323,7 +399,7 @@
       url: "/settings",
       success: function (data) {
         settings=data;
-        console.log (settings);
+        //console.log (settings);
         $("#scrim").hide ();
       }
     });
@@ -333,12 +409,15 @@
 </head>
 <body onLoad="init ()">
   <div id="menu" class="menu">
-    <div class="icon" onclick="newSession ()">Record Session</div>
-    <div class="icon" onclick="playSession ()">Playback Session</div>
-    <div class="icon" onclick="manageSessions ()">Manage Sessions</div>
+    <div class="icon" onclick="showNewSession ()">Record Session</div>
+    <div class="icon" onclick="showPlaySession ()">Playback Session</div>
+    <div class="icon" onclick="showManageSessions ()">Manage Sessions</div>
+    <div class="eberlybanner">Eberly Etherpad Drydock</div> 
   </div>
   <div id="right" class="right">
     <div id="session" class="config"></div>
+
+
     <div id="newsession" class="config" style="display: none; display: flex; flex-direction: row;">
 
       <div style="flex:1; width: 33%;">
@@ -351,7 +430,7 @@
         <button class="button" onclick="nextNames()">Next ...</button>
       </div>
 
-      <div style="flex: 1; width: 33%;">
+      <div style="flex: 1; width: 33%; border-left: 1px solid #c1bebe; padding-left: 10px;">
         <div id="name1container" class="textinputrow">User 1 Name: <input type="text" id="name1" value="" /></div>
         <div id="name2container" class="textinputrow">User 2 Name: <input type="text" id="name2" value="" /></div>
         <div id="name3container" class="textinputrow">User 3 Name: <input type="text" id="name3" value="" /></div>
@@ -359,7 +438,7 @@
         <button class="button" onclick="nextStart()">Next ...</button>
       </div>
 
-      <div style="flex:1; width: 33%;">
+      <div style="flex:1; width: 33%; border-left: 1px solid #c1bebe; padding-left: 10px;">
         <ul style="width: 100%; min-width: 500px;">
           <li id="session1url"></li>
           <li id="session2url"></li>
@@ -370,12 +449,28 @@
       </div>
 
     </div>
-    <div id="playsession" class="config" style="display: none">Test Session</div>
-    <div id="deletesession" class="config" style="display: none">Delete Session</div>
+
+
+    <div id="playsession" class="config" style="display: none">
+      <select id="pads" multiple="multiple" class="list">
+      </select>
+      <button class="button" onclick="playSession()">Play</button>
+    </div>
+
+    
+    <div id="managesessions" class="config" style="display: none">
+      
+    </div>
+
+    
     <div id="sessioninfo" class="sessioninfo"></div>
+
+
     <div id="pad" class="etherpad">
       <iframe id="etherpad" frameborder="0" src="" width="100%" height="100%" sandbox="allow-same-origin allow-scripts"></iframe>
     </div>
+
+
   </div>
   <div id="scrim" class="scrim">
     <div class="loading">Loading ...</div>
