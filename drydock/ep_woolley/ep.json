@@ -1,0 +1,10 @@
+{
+  "parts": [
+    {
+      "name": "ep_woolley",
+      "client_hooks": {
+        "documentReady" : "ep_woolley/static/js:pogsDocumentReady"
+      }
+    }
+  ]
+}

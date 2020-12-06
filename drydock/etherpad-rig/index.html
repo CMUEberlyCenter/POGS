@@ -206,7 +206,9 @@
         $("#pads").empty();
 
         for (var i=0;i<data.padIDs.length;i++) { 
-          $("#pads").append($('<option></option>').val(data.padIDs [i]).html(data.padIDs [i]));
+          if (data.padIDs [i].indexOf ("test")!=0) {
+            $("#pads").append($('<option></option>').val(data.padIDs [i]).html(data.padIDs [i]));
+          }
         }
       }
     });
@@ -377,7 +379,7 @@
   function playSession () {
     console.log ("playSession ()");
 
-    var testPad=uuidv4();
+    var testPad=("test"+uuidv4());
     var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&playsession="+$("#pads").val();
 
     $("#sessioninfo").text(monitorURL);
@@ -399,7 +401,6 @@
       url: "/settings",
       success: function (data) {
         settings=data;
-        //console.log (settings);
         $("#scrim").hide ();
       }
     });
