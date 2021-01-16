@@ -150,6 +150,30 @@ class EtherpadRig {
   /**
    *
    */
+  copyPad (aFrom,aTo) {
+    console.log ("copyPad ("+aFrom+","+aTo+")");
+
+    return new Promise ((resolve, reject) => {
+      let args = {
+        sourceID: aFrom,
+        destinationID: aTo
+      };
+
+      this.etherpad.copyPad(args, function(error, data) {
+        if (error) { 
+          console.error('Error copying pad: ' + error.message);
+          reject (error.message);
+        } else {
+          //console.log('New pad created: ' + JSON.stringify (data));
+          resolve(data);
+        }
+      });
+    });
+  }   
+
+  /**
+   *
+   */
   listGroups () {
     console.log ("listGroups ()");
 
@@ -302,6 +326,8 @@ class EtherpadRig {
     http.createServer(function (req, res) {
       console.log (req.url);
 
+      var url = new URL (req.url,'http://www.example.com/dogs');
+
       if (req.url=="/settings") {
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.write(JSON.stringify(settings));
@@ -324,6 +350,25 @@ class EtherpadRig {
         });
         return;  
       }      
+
+      if (req.url.indexOf ("/copy")!=-1) {
+        console.log ("Creating copy of pad ...");
+
+        var aFrom=url.searchParams.get('from');
+        var aTo=url.searchParams.get('to');
+
+        etherpad.copyPad(aFrom,aTo).then ((data) => {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify(data));
+          res.end();
+        }).catch((error) => { 
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"error": error}));
+          res.end();
+        });
+
+        return;    
+      }        
       
       serve(req, res, finalhandler(req, res));
     }).listen(9000);

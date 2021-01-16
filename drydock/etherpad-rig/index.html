@@ -13,6 +13,7 @@
     width: 100px;
     padding-top: 10px;
     /*flex: 0;*/  
+    overflow-y: hidden;
   }
 
   .right {
@@ -22,11 +23,13 @@
   }
 
   .list {
-    /* width: 250px; */
+    min-width: 250px;
     height: 100%;
     float: left;
     margin-left: 5px;
+    border: 1px solid #d0cece;
     margin-right: 5px;
+    padding: 3px;
   }
 
   .config {
@@ -40,6 +43,15 @@
   .etherpad {
     border: 0px solid grey;
     flex: 1;
+  }
+
+  .status {
+    border: 0px solid grey;
+    flex: 0;
+    height: 24px;
+    font-size: 10pt;
+    padding: 2px;
+    background: #f3f1f1;
   }
 
   .icon {
@@ -163,6 +175,23 @@
   /**
    *
    */
+  function setStatus (aMessage) {
+    console.log (aMessage);
+    $("#status").text (aMessage);
+
+    window.setTimeout (function() { clearStatus (); }, 5000);
+  }
+
+   /**
+   *
+   */
+  function clearStatus () {
+    $("#status").text (" ");
+  } 
+
+  /**
+   *
+   */
   function reset () {
     console.log ("reset ()");
 
@@ -177,6 +206,7 @@
     console.log ("newSession ()");
 
     reset ();
+    clearStatus ();
 
     $("#session").hide();
     $("#newsession").show();
@@ -191,6 +221,7 @@
     console.log ("playSession ()");
 
     reset ();
+    clearStatus ();
 
     $("#session").hide();
     $("#newsession").hide();
@@ -221,6 +252,7 @@
     console.log ("manageSessions ()");
 
     reset ();
+    clearStatus ();
 
     $("#session").hide();
     $("#newsession").hide();
@@ -308,9 +340,34 @@
   /**
    *
    */
+  function previousNames () {
+    console.log ("nextNames ()");
+
+    $("#step1").show ();
+    $("#step2").hide ();
+    $("#step3").hide ();    
+  }
+
+  /**
+   *
+   */
   function nextNames () {
     console.log ("nextNames ()");
 
+    $("#step1").hide ();
+    $("#step2").show ();
+    $("#step3").hide ();
+  }
+
+  /**
+   *
+   */
+  function previousStart () {
+    console.log ("previousStart ()");
+
+    $("#step1").hide ();
+    $("#step2").show ();
+    $("#step3").hide ();    
   }
 
   /**
@@ -354,6 +411,10 @@
       }
     }
 
+    $("#step1").hide ();
+    $("#step2").hide ();
+    $("#step3").show ();
+
     $("#session1url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name1);
     $("#session2url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name2);
     $("#session3url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name3);
@@ -380,11 +441,22 @@
     console.log ("playSession ()");
 
     var testPad=("test"+uuidv4());
-    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&playsession="+$("#pads").val();
 
-    $("#sessioninfo").text(monitorURL);
+    $.ajax({
+      type: "GET",
+      url: "/copy?from="+testPad+"&to="+$("#pads").val(),
+      success: function (data) {
+        if (data.error) {
+          setStatus (data.error);
+        } else {
+          var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor";
 
-    $("#etherpad").attr("src",monitorURL); 
+          $("#sessioninfo").text(monitorURL);
+
+          $("#etherpad").attr("src",monitorURL); 
+        }
+      }
+    });
   }
 
   /**
@@ -393,6 +465,7 @@
   function init () {
     console.log ("init ()");
 
+    clearStatus ();
     showNewSession ();
     confNrSessions ();
 
@@ -421,7 +494,7 @@
 
     <div id="newsession" class="config" style="display: none; display: flex; flex-direction: row;">
 
-      <div style="flex:1; width: 33%;">
+      <div id="step1" style="flex:1; width: 33%;">
         Nr of sesssions/users (max 4): 
         <input type="number" id="sessioncount" onkeyup="changeNrSessions()" oninput="changeNrSessions()" min="1" max="4" value="1" /><br>
         Session/Experiment name:
@@ -431,21 +504,23 @@
         <button class="button" onclick="nextNames()">Next ...</button>
       </div>
 
-      <div style="flex: 1; width: 33%; border-left: 1px solid #c1bebe; padding-left: 10px;">
+      <div id="step2" style="flex: 1; width: 33%; border-left: 1px solid #c1bebe; padding-left: 10px; display: none;">
         <div id="name1container" class="textinputrow">User 1 Name: <input type="text" id="name1" value="" /></div>
         <div id="name2container" class="textinputrow">User 2 Name: <input type="text" id="name2" value="" /></div>
         <div id="name3container" class="textinputrow">User 3 Name: <input type="text" id="name3" value="" /></div>
         <div id="name4container" class="textinputrow">User 4 Name: <input type="text" id="name4" value="" /></div>
+        <button class="button" onclick="previousNames()">Previous</button>
         <button class="button" onclick="nextStart()">Next ...</button>
       </div>
 
-      <div style="flex:1; width: 33%; border-left: 1px solid #c1bebe; padding-left: 10px;">
+      <div id="step3" style="flex:1; width: 33%; border-left: 1px solid #c1bebe; padding-left: 10px; display: none;">
         <ul style="width: 100%; min-width: 500px;">
           <li id="session1url"></li>
           <li id="session2url"></li>
           <li id="session3url"></li>
           <li id="session4url"></li>
         </ul>
+        <button class="button" onclick="previousStart()">Previous</button>
         <button class="button" onclick="startSessions()">Start</button>
       </div>
 
@@ -471,6 +546,8 @@
       <iframe id="etherpad" frameborder="0" src="" width="100%" height="100%" sandbox="allow-same-origin allow-scripts"></iframe>
     </div>
 
+    <div id="status" class="status">
+    </div>
 
   </div>
   <div id="scrim" class="scrim">
