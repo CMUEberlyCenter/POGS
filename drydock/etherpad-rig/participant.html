@@ -9,10 +9,11 @@
   }
 
   .menu {
-    background: grey;
-    width: 100px;
+    background: #fffefe;
+    width: 200px;
     padding-top: 10px;
-    /*flex: 0;*/  
+    /* flex: 0; */
+    padding: 8px;
   }
 
   .right {
@@ -55,8 +56,17 @@
   }
 
   .loading {
-    width: 100px;
-    height: 24px;
+    width: 250px;
+    height: 100px;
+    border: 1px inset grey;
+    background: white;
+    overflow: hidden;
+    padding: 5px;
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: -125px 0 0 -50px; /* apply negative top and left margins to truly center the element */
   }
 
 </style>
@@ -86,22 +96,42 @@
   function init () {
     console.log ("init ()");
 
-    console.log(window.location.search);
+    //console.log(window.location.search);
 
     $.ajax({
       type: "GET",
       url: "/settings",
       success: function (data) {
-        //console.log (data);
-        settings=data;
-        session=getQueryVariable ("session");
-        username=getQueryVariable ("username");
-        
-        $("#scrim").hide ();
+        if (data.error) {
+          //console.log (data);
+          $("#scrimmessage").html (data.error);
+        } else {
+          settings=data;
+          session=getQueryVariable ("session");
+          username=getQueryVariable ("username");
 
-        var etherpadURL="http://"+settings.host+":"+settings.port+"/p/"+session+"?userName="+username;
+          $.ajax({
+            type: "GET",
+            url: "/getsession?session="+session,
+            success: function (data) {
+              if (data.error) {
+                //console.log (data);
+                $("#scrimmessage").html (data.error);
+              } else {
+                $("#scrim").hide ();
 
-        $("#etherpad").attr("src",etherpadURL);        
+                var text=window.atob (data.text); 
+
+                console.log(text);
+
+                $("#menu").text (text);
+
+                var etherpadURL="http://"+settings.host+":"+settings.port+"/p/"+session+"?userName="+username;
+                $("#etherpad").attr("src",etherpadURL);
+              }
+            }
+          });
+        }
       }
     });
   }

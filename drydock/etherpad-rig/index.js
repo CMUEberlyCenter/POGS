@@ -11,7 +11,8 @@ var settings = {};
 var serve = serveStatic(__dirname, { 'index': ['index.html', 'index.htm'] });
 var etherData={
   "groups": {},
-  "authors": {}
+  "authors": {},
+  "sessions": {}
 };
 
 /**
@@ -19,6 +20,7 @@ var etherData={
  * https://blog.etherpad.org/2019/03/18/updating-etherpad-for-modern-javascript/
  * https://github.com/expressjs/serve-static
  * https://stackabuse.com/reading-and-writing-json-files-with-node-js/
+ * https://github.com/tomassedovic/etherpad-lite-client-js
  */
 class EtherpadRig {
 
@@ -27,6 +29,109 @@ class EtherpadRig {
    */
   constructor () {
     this.padsInitialized=false;
+  }
+
+  /**
+   *
+   */
+  load () {
+    console.log ("load ()");
+
+    try {
+      if (fs.existsSync(path)) {
+        let rawEtherData = fs.readFileSync('etherdata.json');
+        if (rawEtherData) {
+          etherData = JSON.parse(rawEtherData);
+        }
+      }
+    } catch(err) {
+      console.error("Etherpad data file does not exist yet: " + err);
+    }
+  }
+
+  /**
+   *
+   */
+  save () {
+    console.log ("save ()");
+
+    //console.log (JSON.stringify (etherData, null, '\t'));
+
+    //fs.writeFileSync ('etherdata.json',JSON.stringify (etherData),0);
+
+    var writeFile;
+    try {
+      /*
+      writeFile = fs.openSync('etherdata.json', 'w');
+      fs.writeSync(writeFile, JSON.stringify (etherData));
+      fs.close(writeFile);
+      */
+      //callback(null, outFile);
+
+      fs.writeFileSync('etherdata.json', JSON.stringify (etherData, null, '\t'));
+    } catch (err) {
+      console.log('Error: Unable to save etherdata.json\n' + err + '\n');
+      //callback(err);
+    }
+  }
+
+  /**
+   *
+   */
+  getSession (aSessionName) {
+    console.log ("getSession ("+aSessionName+")");
+
+    for (var aName in etherData.sessions) {
+      if (aName==aSessionName) {
+        if (etherData.sessions.hasOwnProperty(aName)) {
+          return (etherData.sessions [aSessionName]);   
+        }
+      }
+    }
+
+    return (null);
+  }
+
+  /**
+   *
+   */
+  createSession (aSessionName,aSessionNameFull,aText) {
+    if (etherpad.getSession (aSessionName)!=null) {
+      return;
+    }
+  
+    let sessionObject={
+      id: aSessionName,
+      name: aSessionNameFull,
+      text: aText
+    };
+
+    etherData.sessions [aSessionName]=sessionObject;
+
+    etherpad.save ();
+  }  
+
+  /**
+   *
+   */
+  getStats () {
+    console.log ("getStats ()");
+
+    return (etherpad.listPads ());
+
+    /*
+    return new Promise ((resolve, reject) => {
+      this.etherpad.getStats(function (error, data) {
+        if (error) {
+          console.error('Error getting stats: ' + error.message);
+          reject (error.message);
+        } else { 
+          console.log('Got stats: ' + data);
+          resolve(data);
+        }
+      });
+    });
+    */
   }
 
   /**
@@ -102,6 +207,12 @@ class EtherpadRig {
    */
   createPad (aPadName) {
     console.log ("createPad ("+this.getDefaultGroupID ()+","+aPadName+")");
+
+    // First test our internal dataset first
+
+    let cachedSession=etherpad.getSession (aPadName);
+
+    // Now reflect the data in Etherpad
 
     return new Promise ((resolve, reject) => {
       let args = {
@@ -278,6 +389,8 @@ class EtherpadRig {
   init () {
     console.log ("init ()");
 
+    etherpad.load ();
+
     let rawSettings = fs.readFileSync('settings.json');
     settings = JSON.parse(rawSettings);
 
@@ -328,6 +441,53 @@ class EtherpadRig {
 
       var url = new URL (req.url,'http://www.example.com/dogs');
 
+      if (req.url=="/stats") {
+        etherpad.getStats().then ((data) => {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify(data));
+          res.end();
+        }).catch((error) => { 
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"error": error}));
+          res.end();
+        });
+
+        // getStats is not yet implemented in the API wrapper we use
+
+        /*
+        etherpad.getStats().then ((data) => {
+          console.log ("then ()");
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify(data));
+          res.end();
+        }).catch((error) => { 
+          let msg1=(""+error); // Not a string for some reason
+          let msg=msg1.replace(":","-");
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"error": msg}));
+          res.end();
+        });
+        */
+        return;  
+      }  
+
+      if (req.url.indexOf ("/getsession")!=-1) {
+        var aSession=url.searchParams.get('session');
+
+        let cachedSession=etherpad.getSession (aSession);
+
+        if (cachedSession!=null) {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify(cachedSession));
+          res.end();
+        } else {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"ok": "Session does not yet exists"}));
+          res.end();
+        }
+        return;  
+      }  
+
       if (req.url=="/settings") {
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.write(JSON.stringify(settings));
@@ -366,6 +526,50 @@ class EtherpadRig {
           res.write(JSON.stringify({"error": error}));
           res.end();
         });
+
+        return;    
+      }      
+
+      if (req.url.indexOf ("/checkname")!=-1) {
+        console.log ("Checking pad name ...");
+
+        var aName=url.searchParams.get('name');
+
+        let cachedSession=etherpad.getSession (aName);
+
+        if (cachedSession!=null) {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"error": "Session name already exists"}));
+          res.end();
+        } else {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"ok": "all good"}));
+          res.end();
+        }
+
+        return;    
+      }
+
+      if (req.url.indexOf ("/createsession")!=-1) {
+        console.log ("Creating new session ...");
+
+        var aName=url.searchParams.get('name');
+        var aFull=url.searchParams.get('full');
+        var aText=url.searchParams.get('text');
+
+        let cachedSession=etherpad.getSession (aName);
+
+        if (cachedSession!=null) {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"error": "Session name already exists"}));
+          res.end();
+        } else {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"ok": "Session does not yet exists"}));
+          res.end();
+        }
+
+        etherpad.createSession (aName,aFull,aText);
 
         return;    
       }        

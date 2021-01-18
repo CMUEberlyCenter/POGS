@@ -109,8 +109,17 @@
   }
 
   .loading {
-    width: 100px;
-    height: 24px;
+    width: 250px;
+    height: 100px;
+    border: 1px inset grey;
+    background: white;
+    overflow: hidden;
+    padding: 5px;
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: -125px 0 0 -50px; /* apply negative top and left margins to truly center the element */
   }
 
   .textable {
@@ -121,9 +130,10 @@
     margin-bottom: 2px;
     padding: 2px;
     width: 350px;
-    max-height: 400px;
+    max-height: 52px;
     min-height: 55px;
-    resize: vertical;
+    resize: none;
+    overflow: auto;
   }
 
   .textinputrow {
@@ -155,8 +165,10 @@
 <script>
 
   var nrSessions=1;
-  var sessionName="New Session";
+  var sessionNameFull="";
+  var sessionName="";
   var settings={};
+  var sessionExists=false;
   var name1="";
   var name2="";
   var name3="";
@@ -180,9 +192,29 @@
     $("#status").text (aMessage);
 
     window.setTimeout (function() { clearStatus (); }, 5000);
+  }  
+
+  /**
+   *
+   */
+  function checkName (aName) {
+    console.log ("checkName ()");
+
+    $.ajax({
+      type: "GET",
+      url: "/checkname?name="+aName,
+      success: function (data) {
+        if (data.error) {
+          setStatus ("Can't use " + usernameFull + ":" + data.error);
+          sessionExists=true;
+        } else {
+          sessionExists=false;
+        }
+      }
+    });
   }
 
-   /**
+  /**
    *
    */
   function clearStatus () {
@@ -330,11 +362,19 @@
    *
    */
   function changeSessionName (e) {
-    if ($("#sessionname").val()!="") {
-      sessionName=$("#sessionname").val().replace(/ /g,"_").toLowerCase();
+    let sName=$("#sessionname").val();
+
+    console.log ("changeSessionName ("+sName+")");
+
+    if (sName!="") {
+      sessionNameFull=sName;
+      
+      checkName (sName);
+
+      sessionName=sName.replace(/ /g,"_").toLowerCase();
     }
 
-    console.log ("changeSessionName ("+sessionName+")");
+    console.log ("changeSessionName ("+sessionName+","+sessionNameFull+") 2");
   }  
 
   /**
@@ -352,11 +392,35 @@
    *
    */
   function nextNames () {
-    console.log ("nextNames ()");
+    console.log ("nextNames ("+sessionName+","+sessionNameFull+")");
 
-    $("#step1").hide ();
-    $("#step2").show ();
-    $("#step3").hide ();
+    let sampleText=$("#text").text();
+
+    //console.log ("sample text: " + sampleText);
+
+    if (sessionExists==true) {
+      alert ("Please provide a session name that doesn't already exist");
+      return;
+    }
+
+    setStatus ("Creating session, please wait ...");
+
+    let textEncoded=window.btoa(sampleText);
+
+    $.ajax({
+      type: "GET",
+      url: "/createsession?name="+sessionName+"&full="+sessionNameFull+"&text="+textEncoded,
+      success: function (data) {
+        if (data.error) {
+          setStatus ("Error creating new session: " + data.error);
+        } else {
+          setStatus (" ");
+          $("#step1").hide ();
+          $("#step2").show ();
+          $("#step3").hide ();
+        }
+      }
+    });
   }
 
   /**
@@ -427,7 +491,7 @@
   function startSessions () {
     console.log ("startSessions ()");
 
-    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+sessionName+"?userName=Monitor";
+    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+sessionName+"?userName=Monitor&showChat=true&showControls=false";
 
     $("#sessioninfo").text(monitorURL);
 
@@ -449,7 +513,7 @@
         if (data.error) {
           setStatus (data.error);
         } else {
-          var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor";
+          var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=true&showControls=false";
 
           $("#sessioninfo").text(monitorURL);
 
@@ -457,6 +521,33 @@
         }
       }
     });
+  }
+
+  /**
+   *
+   */
+  function startOver () {
+    console.log ("startOver ()");
+
+    $("#sessioninfo").text(" ");
+
+    $("#etherpad").attr("src",""); 
+
+    nrSessions=1;
+    sessionNameFull="";
+    sessionName="";
+    sessionExists=false;
+    name1="";
+    name2="";
+    name3="";
+    name4="";
+
+    $("#text").val("");
+    $("#sessionname").val("");
+
+    $("#step1").show ();
+    $("#step2").hide ();
+    $("#step3").hide ();
   }
 
   /**
@@ -471,10 +562,21 @@
 
     $.ajax({
       type: "GET",
-      url: "/settings",
+      url: "/stats",
       success: function (data) {
-        settings=data;
-        $("#scrim").hide ();
+        if (data.error) {
+          console.log (data);
+          $("#scrimmessage").html (data.error);
+        } else {
+          $.ajax({
+            type: "GET",
+            url: "/settings",
+            success: function (data) {
+              settings=data;
+              $("#scrim").hide ();
+            }
+          });          
+        }
       }
     });
   }
@@ -498,7 +600,7 @@
         Nr of sesssions/users (max 4): 
         <input type="number" id="sessioncount" onkeyup="changeNrSessions()" oninput="changeNrSessions()" min="1" max="4" value="1" /><br>
         Session/Experiment name:
-        <input type="text" id="sessionname" onkeydown="changeSessionName()" value="New Session" /><br>
+        <input type="text" id="sessionname" onkeyup="changeSessionName()" value="New Session" /><br>
         Text to reproduce:
         <div id="text" class="textable" contenteditable="true"></div>
         <button class="button" onclick="nextNames()">Next ...</button>
@@ -514,6 +616,7 @@
       </div>
 
       <div id="step3" style="flex:1; width: 33%; border-left: 1px solid #c1bebe; padding-left: 10px; display: none;">
+        Please hand each of your participants one of the URLs. When you click Start you will see a monitoring session below, which will show you the partipant's activity.
         <ul style="width: 100%; min-width: 500px;">
           <li id="session1url"></li>
           <li id="session2url"></li>
@@ -522,6 +625,7 @@
         </ul>
         <button class="button" onclick="previousStart()">Previous</button>
         <button class="button" onclick="startSessions()">Start</button>
+        <button class="button" onclick="startOver()">Start Over</button>
       </div>
 
     </div>
@@ -551,7 +655,7 @@
 
   </div>
   <div id="scrim" class="scrim">
-    <div class="loading">Loading ...</div>
+    <div id="scrimmessage" class="loading">Loading ...</div>
   </div>
 </body>
 </html>
