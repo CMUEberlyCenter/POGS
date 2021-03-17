@@ -1,0 +1,7 @@
+{
+  "parts": [
+    { "name": "scriptrunner", 
+      "client_hooks": { "postAceInit": "ep_scriptrunner/static/js/index" }
+    }
+  ]
+}
