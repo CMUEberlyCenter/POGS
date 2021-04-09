@@ -436,8 +436,18 @@ class EtherpadRig {
 
     this.init ();
 
-    http.createServer(function (req, res) {
-      console.log (req.url);
+    http.createServer(function (req, res) {      
+      console.log ("Processing request: " + req.url);
+              
+      if (req.headers.hasOwnProperty ("origin")==true) {
+        console.log ("Using origin for CORS header ...");
+        res.setHeader('Access-Control-Allow-Headers', req.headers.origin);
+      } else {
+        console.log ("Using host for CORS header ...");
+        res.setHeader('Access-Control-Allow-Headers', req.headers.host);
+      }
+
+      res.setHeader ('Access-Control-Allow-Origin','*');
 
       var url = new URL (req.url,'http://www.example.com/dogs');
 
@@ -574,6 +584,15 @@ class EtherpadRig {
         return;    
       }        
       
+      if (req.url.indexOf (".json")!=-1) {
+        res.writeHead(200, {'Content-Type': 'text/json'});
+        fs.readFile('data/sample-script.json', function(err, content){
+          res.write(content);
+          res.end();
+        });
+        return;
+      }
+
       serve(req, res, finalhandler(req, res));
     }).listen(9000);
   }
