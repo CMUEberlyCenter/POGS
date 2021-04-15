@@ -1,9 +1,16 @@
-'use strict';
+/**
+ * Via:
+ *   https://github.com/ether/ep_copy_paste_select_all/blob/master/static/js/copy_paste_select_all.js
+ */
+
+//'use strict';
 
 var padeditor = require('ep_etherpad-lite/static/js/pad_editor').padeditor;
 var script=null;
 var scriptIndex=0;
+var participants=null;
 var currentCommand=null;
+var useDomMethods=true;
 
 /**
  *
@@ -14,6 +21,21 @@ function isEmpty (str) {
   }
 
   return (false);
+}
+
+/**
+ * Via: https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType
+ */
+function debugNodeType (aType) {
+  if (aType==Node.ELEMENT_NODE) { console.log ("An Element node like <p> or <div>."); }
+  if (aType==Node.ATTRIBUTE_NODE) { console.log ("An Attribute of an Element."); }
+  if (aType==Node.TEXT_NODE) { console.log ("The actual Text inside an Element or Attr."); }
+  if (aType==Node.CDATA_SECTION_NODE) { console.log ("A CDATASection, such as <!CDATA[[ … ]]>."); }
+  if (aType==Node.PROCESSING_INSTRUCTION_NODE) { console.log ("A ProcessingInstruction of an XML document, such as <?xml-stylesheet … ?>."); }
+  if (aType==Node.COMMENT_NODE) { console.log ("A Comment node, such as <!-- … -->."); }
+  if (aType==Node.DOCUMENT_NODE) { console.log ("A Document node."); }
+  if (aType==Node.DOCUMENT_TYPE_NODE) { console.log ("A DocumentType node, such as <!DOCTYPE html>."); }
+  if (aType==Node.DOCUMENT_FRAGMENT_NODE) { console.log ("A DocumentFragment node."); }
 }
 
 /**
@@ -35,7 +57,7 @@ function selectAll () {
  *
  */
 function parseTimestamp (aTimestamp) {
-  console.log ("parseTimestamp ("+aTimestamp+")");
+  //console.log ("parseTimestamp ("+aTimestamp+")");
 
   if (isEmpty (aTimestamp)==true) {
     return(-1);
@@ -97,6 +119,8 @@ function runScript () {
     return;
   }
 
+  processParticipants (script ["participants"]);
+
   var anEntry=script [0];
 
   var command=anEntry.command;
@@ -116,7 +140,7 @@ function runScript () {
  *
  */
 function nextScriptStep () {
-  console.log ("nextScriptStep ("+scriptIndex+")");
+  //console.log ("nextScriptStep ("+scriptIndex+")");
 
   if (script==null) {
     return;
@@ -139,7 +163,7 @@ function nextScriptStep () {
 
     currentCommand=anEntry;
 
-    console.log ("Waiting for command (" + command + ") to kick in in: " + timestamp + " milliseconds");
+    //console.log ("Waiting for command (" + command + ") to kick in in: " + timestamp + " milliseconds");
 
     setTimeout (nextScriptStep,timestamp);
 
@@ -148,6 +172,29 @@ function nextScriptStep () {
     console.log ("Script finished");
     currentCommand=null;
   }
+}
+
+/**
+ *
+ */
+function getParticipant (aParticipant) {
+  console.log("getParticipant (" + aParticipant + ")");
+
+  if (participants==null) {
+    console.log ("Error no participants array found in script");
+    return (null);
+  }
+
+  for (var i=0;i<participants.length;i++) {
+    var pTest=participants [i];
+
+    console.log ("Comparing " + pTest.id + " to: " + aParticipant);
+    if (pTest.id==aParticipant) {
+      return (pTest);
+    }
+  }
+
+  return (null);
 }
 
 /**
@@ -161,7 +208,18 @@ function nextScriptStep () {
 function executeCommand (aCommand) {
   console.log ("Executing: " + aCommand.command + " ...");
 
+  var participant=aCommand.participant;
+
+  var partObject=getParticipant (participant);
+
+  if (partObject==null) {
+    console.log ("Error: can't obtain participant object");
+    return;
+  }
+
   var command=aCommand.command;
+
+  //>------------------------------------------------  
 
   if (command=="setText") {
     var text=aCommand.argument1;
@@ -176,9 +234,13 @@ function executeCommand (aCommand) {
     },'scriptrunner',true);
   }
 
+  //>------------------------------------------------  
+
   if (command=="setChatText") {
     console.log ("NOP");
   }
+
+  //>------------------------------------------------
 
   if (command=="replaceFirst") {
     console.log ("replaceFirst ()");
@@ -188,16 +250,46 @@ function executeCommand (aCommand) {
     var from=aCommand.argument1;
     var to=aCommand.argument2;
 
-    var index=current.indexOf(from);
+    if (useDomMethods==false) {
+      var index=current.indexOf(from);
 
-    if (index==-1) {
-      console.log ("Text to be replaced (" + from + ") not found!");
+      if (index==-1) {
+        console.log ("Text to be replaced (" + from + ") not found!");
+      } else {
+        window.myAce.callWithAce((ace) => {
+          ace.ace_performDocumentReplaceCharRange(index,from.length,to);
+        },'scriptrunner',true);    
+      }
     } else {
-      window.myAce.callWithAce((ace) => {
-        ace.ace_performDocumentReplaceCharRange(index,from.length,to);
-      },'scriptrunner',true);    
+      const HTMLLines = $('iframe[name="ace_outer"]').contents().find('iframe').contents().find('#innerdocbody').children('div');
+      $(HTMLLines).each(function () { // For each line
+        //findAndReplace(from, to, this, partObject.color);
+        findAndReplaceOriginal(from, to, this, partObject.color);
+      });      
     }
   }
+
+  //>------------------------------------------------
+
+  if (command=="deleteFirst") {
+    console.log ("deleteFirst ()");
+
+    var current=padeditor.ace.exportText ();
+
+    var deleter=aCommand.argument1;
+
+    var index=current.indexOf(deleter);
+
+    if (index==-1) {
+      console.log ("Text to be deleted (" + deleter + ") not found!");
+    } else {
+      window.myAce.callWithAce((ace) => {
+        ace.ace_performDocumentReplaceCharRange(index,deleter.length,"");
+      },'scriptrunner',true);    
+    }
+  }  
+
+  //>------------------------------------------------
 
   if (command=="replaceAll") {
     console.log ("NOP");
@@ -205,6 +297,8 @@ function executeCommand (aCommand) {
     var from=aCommand.argument1;
     var to=aCommand.argument2;    
   }
+
+  //>------------------------------------------------  
 
   if (command=="addTextAtEnd") {    
     var text=aCommand.argument1;
@@ -218,6 +312,8 @@ function executeCommand (aCommand) {
       ace.ace_performDocumentReplaceCharRange(length,length,text);
     },'scriptrunner',true);    
   }
+
+  //>------------------------------------------------  
 }
 
 /**
@@ -241,6 +337,7 @@ function load () {
     processParticipants (data.participants);
 
     script=data.script;
+    participants=data.participants;
 
     runScript ();
 
@@ -254,24 +351,6 @@ function load () {
   .always(function() {
     console.log("complete");
   });
- 
-  /*
-  $.ajax({
-    url: jsonURL,
-    type: 'GET',
-    dataType: 'text',
-    success: function (data) {
-      try {
-        var output = JSON.parse(data);
-        console.log (output);
-      } catch (e) {
-        console.log ("Error, the downloaded data is not valid JSON " + data);
-      }
-    }, error: function (request, error) {
-      console.log ("AJAX Call Error: " + error);
-    }
-  });  
-  */
 }
 
 /**
@@ -355,3 +434,160 @@ const postAceInit = (hook, context) => {
   });
 };
 */
+
+/**
+ *
+ */
+function findAndReplaceOriginal (searchText, replacement, searchNode, aColor) {
+  //console.log ("findAndReplaceOriginal ('" + searchText + "','" + replacement + "'') => " + aColor);
+
+  if (!searchText || typeof replacement === 'undefined') {
+    console.log ("Error: no search or replacement text provided!");
+    return;
+  }
+
+  var regex = typeof searchText === 'string' ? new RegExp(searchText, 'gi') : searchText;
+  var childNodes = (searchNode || document.body).childNodes;
+  
+  let cnLength = childNodes.length;
+
+  //console.log ("Iterating over " + cnLength + " nodes ...");
+  
+  var excludes = ['html', 'head', 'style', 'title', 'meta', 'script', 'object', 'iframe', 'link'];
+
+  while (cnLength--) {
+    //console.log ("Iteration " + cnLength);
+
+    var currentNode = childNodes[cnLength];
+
+    //debugNodeType (currentNode.nodeType);
+
+    if (currentNode.nodeType === 1) {
+      if (excludes.indexOf(currentNode.nodeName.toLowerCase() === -1)) {
+        //arguments.callee(searchText, replacement, currentNode, aColor);
+        findAndReplace (searchText, replacement, currentNode, aColor);
+      }
+    }
+
+    //console.log ("Testing: " + currentNode.data);
+
+    if (currentNode.nodeType !== 3 || !regex.test(currentNode.data)) {
+      //console.log ("Ding!");
+      continue;
+    }
+
+    //console.log ("Node type is text type and we match");
+
+    var parent = currentNode.parentNode;
+
+    var frag = (() => {
+      var html = currentNode.data.replace(regex, replacement);
+      var wrap = document.createElement('div');
+      wrap.style.backgroundColor = aColor;
+      var frag = document.createDocumentFragment();
+      wrap.innerHTML = html;
+      while (wrap.firstChild) {
+        frag.appendChild(wrap.firstChild);
+      }
+      return frag;
+    })();
+
+    //console.log ("Doing the actual replacing ...");
+
+    parent.insertBefore(frag, currentNode);
+    parent.removeChild(currentNode);
+
+    //parent.classList.remove(parent.className);
+  }
+
+  console.log ("findAndReplace () done");
+}
+
+
+/**
+ *
+ */
+function findAndReplace (searchText, replacement, searchNode, aColor) {
+  //console.log ("findAndReplace ('" + searchText + "','" + replacement + "'') => " + aColor);
+
+  if (!searchText || typeof replacement === 'undefined') {
+    console.log ("Error: no search or replacement text provided!");
+    return;
+  }
+
+  var regex = typeof searchText === 'string' ? new RegExp(searchText, 'gi') : searchText;
+  var childNodes = (searchNode || document.body).childNodes;
+  
+  let cnLength = childNodes.length;
+
+  //console.log ("Iterating over " + cnLength + " nodes ...");
+  
+  var excludes = ['html', 'head', 'style', 'title', 'meta', 'script', 'object', 'iframe', 'link'];
+
+  while (cnLength--) {
+    //console.log ("Iteration " + cnLength);
+
+    var currentNode = childNodes[cnLength];
+
+    //debugNodeType (currentNode.nodeType);
+
+    if (currentNode.nodeType === 1) {
+      if (excludes.indexOf(currentNode.nodeName.toLowerCase() === -1)) {
+        //arguments.callee(searchText, replacement, currentNode, aColor);
+        findAndReplace (searchText, replacement, currentNode, aColor);
+      }
+    }
+
+    //console.log ("Testing: " + currentNode.data);
+
+    if (currentNode.nodeType !== 3 || !regex.test(currentNode.data)) {
+      //console.log ("Ding!");
+      continue;
+    }
+
+    //console.log ("Node type is text type and we match");
+
+    var span = currentNode.parentNode;
+
+    var div = span.parentNode;
+    var text = currentNode.data;
+    var className = span.className;
+
+    console.log ("Class verify: " + currentNode.className);
+    console.log ("Class verify: " + span.className);
+    console.log ("Class verify: " + div.className);
+
+    var preIndex=currentNode.data.indexOf (searchText);
+
+    var pre=currentNode.data.substring (0, preIndex);
+    var cont=currentNode.data.substring(preIndex, searchText.length);
+    var rest=currentNode.data.substring(preIndex + searchText.length, currentNode.data.length);
+
+    console.log ("("+pre+"),("+cont+"),("+rest+")");
+
+    var span1 = document.createElement('span');
+    span1.className = className;
+    span1.innerHTML = pre;
+
+    var span2 = document.createElement('span');
+    span2.style.backgroundColor = aColor;
+    span2.innerHTML = replacement;
+
+    var span3 = document.createElement('span');
+    span3.className = className;
+    span3.innerHTML = rest;
+
+    var frag = document.createDocumentFragment();    
+
+    frag.appendChild (span1);
+    frag.appendChild (span2);
+    frag.appendChild (span3);
+
+    // Now remove the original and we should be good to go
+    div.removeChild (span);
+
+    div.appendChild (frag);
+  }
+
+  //console.log ("findAndReplace () done");
+}
