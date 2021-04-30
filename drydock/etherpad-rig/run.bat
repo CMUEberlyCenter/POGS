@@ -1,2 +1,2 @@
-clear
+cls
 node index.js

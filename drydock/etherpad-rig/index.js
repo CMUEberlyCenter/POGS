@@ -560,6 +560,51 @@ class EtherpadRig {
         return;    
       }
 
+
+      // https://stackabuse.com/node-list-files-in-a-directory/
+      if (req.url.indexOf ("/loadscript")!=-1) {
+        console.log ("Load a particular script");
+
+        var directory = './data/';
+        var fileJSON=[];
+
+
+        return;    
+      }      
+
+      // https://stackabuse.com/node-list-files-in-a-directory/
+      if (req.url.indexOf ("/loadscripts")!=-1) {
+        console.log ("Returning list of scripts ...");
+
+        var directory = './data/';
+        var fileJSON=[];
+
+        fs.readdir(directory, (err, files) => {
+          for (let i=0;i<files.length;i++) {
+            let file=files [i];
+            if (file.toLowerCase ().indexOf (".json")>0) {
+              //console.log(file);
+              fileJSON.push (file);
+            }
+          }
+
+          console.log (fileJSON);
+          console.log (fileJSON.length);
+
+          if (fileJSON.length>0) {
+            res.writeHead(200, {'Content-Type': 'application/json'});
+            res.write(JSON.stringify({"ok": "all good", "data": fileJSON}));
+            res.end();          
+          } else {
+            res.writeHead(200, {'Content-Type': 'application/json'});
+            res.write(JSON.stringify({"error": "No script files found"}));
+            res.end();
+          }          
+        });
+
+        return;    
+      }
+
       if (req.url.indexOf ("/createsession")!=-1) {
         console.log ("Creating new session ...");
 
