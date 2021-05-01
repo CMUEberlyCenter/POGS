@@ -560,20 +560,8 @@ class EtherpadRig {
         return;    
       }
 
-
       // https://stackabuse.com/node-list-files-in-a-directory/
-      if (req.url.indexOf ("/loadscript")!=-1) {
-        console.log ("Load a particular script");
-
-        var directory = './data/';
-        var fileJSON=[];
-
-
-        return;    
-      }      
-
-      // https://stackabuse.com/node-list-files-in-a-directory/
-      if (req.url.indexOf ("/loadscripts")!=-1) {
+      if (req.url.indexOf ("/listscripts")!=-1) {
         console.log ("Returning list of scripts ...");
 
         var directory = './data/';
@@ -604,6 +592,23 @@ class EtherpadRig {
 
         return;    
       }
+
+      // https://stackabuse.com/node-list-files-in-a-directory/
+      if (req.url.indexOf ("/loadscript")!=-1) {
+        console.log ("Load a particular script");
+        
+        var fileJSON=[];
+
+        var aName=url.searchParams.get('name');
+
+        fs.readFile('data/' + aName, function(err, fileContent){
+          let json=JSON.parse (fileContent);
+          res.write(JSON.stringify({"ok": "all good", "data": json}));
+          res.end();          
+        });        
+
+        return;    
+      }        
 
       if (req.url.indexOf ("/createsession")!=-1) {
         console.log ("Creating new session ...");
