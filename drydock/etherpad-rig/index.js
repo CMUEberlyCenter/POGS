@@ -608,7 +608,32 @@ class EtherpadRig {
         });        
 
         return;    
+      }
+
+      // https://stackabuse.com/node-list-files-in-a-directory/
+      if (req.url.indexOf ("/savescript")!=-1) {
+        console.log ("Save a particular script");
+        
+        var aName=url.searchParams.get('name');
+        var data=req.body;
+
+        console.log (data);
+
+        fs.writeFile('data/' + aName, 
+        data,
+        function (err) {
+          if (err) {
+            res.writeHead(200, {'Content-Type': 'application/json'});
+            res.write(JSON.stringify({"error": "Error saving file"}));
+          } else {
+            res.write(JSON.stringify({"ok": "all good"}));
+            res.end();                    
+          }
+        });
+
+        return;    
       }        
+
 
       if (req.url.indexOf ("/createsession")!=-1) {
         console.log ("Creating new session ...");
