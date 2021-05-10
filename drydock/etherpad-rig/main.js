@@ -28,7 +28,7 @@ function setStatus (aMessage) {
   console.log (aMessage);
   $("#status").text (aMessage);
 
-  window.setTimeout (function() { clearStatus (); }, 5000);
+  //window.setTimeout (function() { clearStatus (); }, 5000);
 }  
 
 /**
@@ -425,7 +425,8 @@ function showScriptRunner () {
 
     var testPad=uuidv4();
         
-    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=false&showControls=false";
+    //var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=false&showControls=false&file="+filename;
+    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&file="+encodeURIComponent(filename)+"?chatAlwaysVisible=false&noColors=false";
 
     $("#etherpad").attr("src",monitorURL); 
   }
@@ -445,7 +446,8 @@ function showScriptRunner () {
     
     var testPad=uuidv4();
 
-    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=false&showControls=false";
+    //var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=false&showControls=false&file="+filename;
+    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&file="+(filename);
         
     setStatus (monitorURL);
   }

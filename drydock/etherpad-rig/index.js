@@ -601,10 +601,17 @@ class EtherpadRig {
 
         var aName=url.searchParams.get('name');
 
+        console.log ("Loading: " + aName + " ...");
+
         fs.readFile('data/' + aName, function(err, fileContent){
-          let json=JSON.parse (fileContent);
-          res.write(JSON.stringify({"ok": "all good", "data": json}));
-          res.end();          
+          if (err) {
+            res.writeHead(200, {'Content-Type': 'application/json'});
+            res.write(JSON.stringify({"error": "Error loading file"}));
+          } else {
+            let json=JSON.parse (fileContent);
+            res.write(JSON.stringify({"ok": "all good", "data": json}));
+            res.end();          
+          }
         });        
 
         return;    
