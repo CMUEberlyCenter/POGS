@@ -782,48 +782,101 @@ function showFiles () {
 
       for (let i=0;i<actions.length;i++) {
         let anAction=actions [i];
-        $("#sortable").append ('<li class="actionitem">' + anAction.command + '<div onClick="deleteActionItem('+i+')" class="deletebutton">X</div><div id="timestamp-'+i+'" class="timestamp" onBlur="onSaveTimestamp('+i+')" ondblclick="onEditTimestamp('+i+')">'+anAction.timestamp+'</div></li>');
+        $("#sortable").append ('<li class="actionitem" id="'+i+'">' + anAction.command + '<div onClick="deleteActionItem('+i+')" class="deletebutton">X</div><div id="timestamp-'+i+'" class="timestamp" onBlur="onSaveTimestamp('+i+')" ondblclick="onEditTimestamp('+i+')">'+anAction.timestamp+'</div></li>');
       }      
     }
   }
 
-  /**
-   *
-   */
-  function init () {
-    console.log ("init ()");
+/**
+ *
+ */
+function processScriptEvent (anEvent) {
+  console.log ("processScriptEvent ("+anEvent.index+","+anEvent.command+")");
 
-    // https://jqueryui.com/sortable/
-    $("#sortable").sortable();
-    $("#sortable").disableSelection();    
-
-    clearStatus ();
-    showNewSession ();
-    confNrSessions ();
-    newScript ();
-
-    $("#scripts").click(function() {
-      console.log ("Selected: " + $("#scripts").val());
-      $("#scriptname").val($("#scripts").val());
-    });
-
-    $.ajax({
-      type: "GET",
-      url: "/stats",
-      success: function (data) {
-        if (data.error) {
-          console.log (data);
-          $("#scrimmessage").html (data.error);
-        } else {
-          $.ajax({
-            type: "GET",
-            url: "/settings",
-            success: function (data) {
-              settings=data;
-              $("#scrim").hide ();
-            }
-          });          
-        }
-      }
-    });
+  if (anEvent.command=="start") {
+    showScript ();
+    return;
   }
+
+  if (anEvent.command=="finish") {    
+    showScript ();
+    return;
+  }
+
+  showScript ();
+}
+
+/**
+ *
+ */
+function reorder () {
+  console.log ("reorder ()");
+
+  var domList = document.getElementsByClassName("actionitem");
+  var reOrdered=[];
+
+  if (domList!=null) {
+    var i;
+    for (i = 0; i < domList.length; i++) {
+      console.log ("Re-ordering: " + domList[i].id);
+      let index=parseInt(domList[i].id);
+
+      reOrdered.push (script.script [index]);
+    }
+
+    script.script=reOrdered;
+
+    showScript ();
+  } else {
+    console.log ("Error: no items to re-order");
+  }
+}
+
+/**
+ *
+ */
+function init () {
+  console.log ("init ()");
+
+  window.addEventListener ("message",function (event) {
+    processScriptEvent (event.data);
+  });
+
+  // https://jqueryui.com/sortable/
+  $("#sortable").sortable({
+    stop: function (event,ui) {
+      reorder ();
+    }
+  });
+  $("#sortable").disableSelection();    
+
+  clearStatus ();
+  showNewSession ();
+  confNrSessions ();
+  newScript ();
+
+  $("#scripts").click(function() {
+    console.log ("Selected: " + $("#scripts").val());
+    $("#scriptname").val($("#scripts").val());
+  });
+
+  $.ajax({
+    type: "GET",
+    url: "/stats",
+    success: function (data) {
+      if (data.error) {
+        console.log (data);
+        $("#scrimmessage").html (data.error);
+      } else {
+        $.ajax({
+          type: "GET",
+          url: "/settings",
+          success: function (data) {
+            settings=data;
+            $("#scrim").hide ();
+          }
+        });          
+      }
+    }
+  });
+}

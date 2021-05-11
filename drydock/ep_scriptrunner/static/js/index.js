@@ -129,6 +129,12 @@ function runScript () {
 
   currentCommand=anEntry;
 
+  if (window.parent) {
+    window.parent.postMessage ({"index": 0, "command": "start"},"*");
+  } else {
+    console.log ("We're not running in the authoring environment");
+  }
+
   console.log ("Waiting for command (" + command + ") to kick in in: " + timestamp + " milliseconds");
 
   setTimeout (nextScriptStep,timestamp);
@@ -170,6 +176,13 @@ function nextScriptStep () {
     scriptIndex++;
   } else {
     console.log ("Script finished");
+
+    if (window.parent) {
+      window.parent.postMessage ({"index": -1, "command": "finish"},"*");
+    } else {
+      console.log ("We're not running in the authoring environment");
+    }
+
     currentCommand=null;
   }
 }
@@ -218,6 +231,12 @@ function executeCommand (aCommand) {
   }
 
   var command=aCommand.command;
+
+  if (window.parent) {
+    window.parent.postMessage ({"index": scriptIndex, "command": command},"*");
+  } else {
+    console.log ("We're not running in the authoring environment");
+  }
 
   //>------------------------------------------------  
 
@@ -323,24 +342,38 @@ function load () {
   console.log ("load ()");
 
   var urlParser=new URL (window.location.href);
+  var searchParams=urlParser.searchParams;
+  var fileName='sample-script.json';
+  
+  for (let p of searchParams) {
+    if (p=="file") {      
+      fileName=searchParams [p];
+      console.log ("Setting filename to: " + filename);
+    }
+  }  
 
-  var jsonURL="http://" + urlParser.hostname + ":9000/data/sample-script.json";
+  var jsonURL="http://" + urlParser.hostname + ":9000/loadscript?name=" + fileName;
 
   console.log ("Loading script from: " + jsonURL);
  
-  $.getJSON(jsonURL,function (data) {
-    console.log ("Data loaded, processing script ...");
+  $.getJSON(jsonURL,function (loadedData) {
+    if (loadedData.error) {
+      console.log ("Error loading script: " + loadedData.error);
+    } else {
+      console.log ("Data loaded, processing script ...");
 
-    console.log (data.participants);
-    console.log (data.script);
+      let data=loadedData.data;
 
-    processParticipants (data.participants);
+      console.log (data.participants);
+      console.log (data.script);
 
-    script=data.script;
-    participants=data.participants;
+      processParticipants (data.participants);
 
-    runScript ();
+      script=data.script;
+      participants=data.participants;
 
+      runScript ();
+    }
   }).done(function() {
     console.log("done");
   })
