@@ -620,22 +620,28 @@ class EtherpadRig {
       // https://stackabuse.com/node-list-files-in-a-directory/
       if (req.url.indexOf ("/savescript")!=-1) {
         console.log ("Save a particular script");
-        
-        var aName=url.searchParams.get('name');
-        var data=req.body;
 
-        console.log (data);
+        let body = [];
 
-        fs.writeFile('data/' + aName, 
-        data,
-        function (err) {
-          if (err) {
-            res.writeHead(200, {'Content-Type': 'application/json'});
-            res.write(JSON.stringify({"error": "Error saving file"}));
-          } else {
-            res.write(JSON.stringify({"ok": "all good"}));
-            res.end();                    
-          }
+        req.on('data', (chunk) => {
+          body.push(chunk);
+        }).on('end', () => {
+          body = Buffer.concat(body).toString();
+          console.log (body);
+
+          var aName=url.searchParams.get('name');
+
+          fs.writeFile('data/' + aName, 
+          body,
+          function (err) {
+            if (err) {
+              res.writeHead(200, {'Content-Type': 'application/json'});
+              res.write(JSON.stringify({"error": "Error saving file"}));
+            } else {
+              res.write(JSON.stringify({"ok": "all good"}));
+              res.end();                    
+            }
+          });          
         });
 
         return;    

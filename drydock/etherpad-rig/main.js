@@ -493,9 +493,16 @@ function showFiles () {
     $.ajax({
       type: "POST",
       url: "/savescript?name="+filename,
-      data: script,
-      dataType: 'json'
-    });    
+      data: JSON.stringify(script),
+      contentType: "application/json",
+      success: function (data) {
+        loadScripts ();
+      },
+      error: function (data) {
+        setStatus ("Error saving file");
+        loadScripts ();
+      }
+    });
   }
 
   /**
