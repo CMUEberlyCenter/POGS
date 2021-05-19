@@ -1,5 +1,6 @@
 {
   "apikey": "6748f7a6c00610665e19eeb646140ad2afc4315f459e25224e20488900448044",
+  "https": "true",
   "host": "192.168.0.108",
   "port": 9001,
   "portmanager": 9000

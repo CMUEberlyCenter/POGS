@@ -1,0 +1,14 @@
+from ubuntu:latest
+
+RUN apt-get update && apt-get install -y git
+RUN apt-get install curl gnupg -yq
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash
+RUN apt-get install nodejs -yq
+
+RUN useradd -ms /bin/bash etherpad
+USER etherpad
+WORKDIR /home/etherpad
+
+RUN git clone https://github.com/ether/etherpad-lite.git
+
+RUN ls -als
