@@ -441,9 +441,23 @@ class EtherpadRig {
               
       if (req.headers.hasOwnProperty ("origin")==true) {
         console.log ("Using origin for CORS header ...");
+        if (typeof  req.headers.origin == undefined) {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"error": 'origin field is null'}));
+          res.end();
+          return;
+        }
         res.setHeader('Access-Control-Allow-Headers', req.headers.origin);
       } else {
         console.log ("Using host for CORS header ...");
+
+        if (typeof req.headers.host == undefined) {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"error": 'host is null'}));
+          res.end();
+          return;
+        }
+
         res.setHeader('Access-Control-Allow-Headers', req.headers.host);
       }
 
