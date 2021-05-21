@@ -438,6 +438,7 @@ class EtherpadRig {
 
     http.createServer(function (req, res) {      
       console.log ("Processing request: " + req.url);
+      console.log (req.headers);
               
       if (req.headers.hasOwnProperty ("origin")==true) {
         console.log ("Using origin for CORS header ...");
