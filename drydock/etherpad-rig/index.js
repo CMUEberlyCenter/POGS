@@ -431,7 +431,7 @@ class EtherpadRig {
   /**
    * Slow, but I don't really care
    */
-  function isEmpty(obj) {
+  isEmpty(obj) {
     for(var prop in obj) {
       if(obj.hasOwnProperty(prop)) {
         return false;
@@ -453,7 +453,7 @@ class EtherpadRig {
       console.log ("Processing request: " + req.url);
       console.log (req.headers);
 
-      if (isEmpty (req.headers)==true) {
+      if (this.isEmpty (req.headers)==true) {
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.write(JSON.stringify({"error": 'no headers provided, bump'}));
         res.end();
