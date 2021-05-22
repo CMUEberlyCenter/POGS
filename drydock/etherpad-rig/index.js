@@ -429,6 +429,19 @@ class EtherpadRig {
   }
  
   /**
+   * Slow, but I don't really care
+   */
+  function isEmpty(obj) {
+    for(var prop in obj) {
+      if(obj.hasOwnProperty(prop)) {
+        return false;
+      }
+    }
+
+    return JSON.stringify(obj) === JSON.stringify({});
+  }
+
+  /**
    *
    */
   run () {
@@ -439,6 +452,13 @@ class EtherpadRig {
     http.createServer(function (req, res) {      
       console.log ("Processing request: " + req.url);
       console.log (req.headers);
+
+      if (isEmpty (req.headers)==true) {
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.write(JSON.stringify({"error": 'no headers provided, bump'}));
+        res.end();
+        return;
+      }
               
       if (req.headers.hasOwnProperty ("origin")==true) {
         console.log ("Using origin for CORS header ...");
