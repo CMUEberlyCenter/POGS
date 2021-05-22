@@ -15,6 +15,19 @@ var etherData={
   "sessions": {}
 };
 
+  /**
+   * Slow, but I don't really care
+   */
+function isEmpty(obj) {
+  for(var prop in obj) {
+    if(obj.hasOwnProperty(prop)) {
+      return false;
+    }
+  }
+
+  return JSON.stringify(obj) === JSON.stringify({});
+}
+
 /**
  * https://etherpad.org/doc/v1.8.4/
  * https://blog.etherpad.org/2019/03/18/updating-etherpad-for-modern-javascript/
@@ -429,19 +442,6 @@ class EtherpadRig {
   }
  
   /**
-   * Slow, but I don't really care
-   */
-  isEmpty(obj) {
-    for(var prop in obj) {
-      if(obj.hasOwnProperty(prop)) {
-        return false;
-      }
-    }
-
-    return JSON.stringify(obj) === JSON.stringify({});
-  }
-
-  /**
    *
    */
   run () {
@@ -453,7 +453,7 @@ class EtherpadRig {
       console.log ("Processing request: " + req.url);
       console.log (req.headers);
 
-      if (this.isEmpty (req.headers)==true) {
+      if (isEmpty (req.headers)==true) {
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.write(JSON.stringify({"error": 'no headers provided, bump'}));
         res.end();
