@@ -511,6 +511,13 @@ function showFiles () {
   function loadScript () {
     console.log ("loadScript ()");
    
+    var fileName=("#scripts").val();
+
+    if (fileName=="") {
+      alert ("Please enter or choose a filename first");
+      return;
+    }
+
     $.ajax({
       type: "GET",
       url: "/loadscript?name="+$("#scripts").val(),
