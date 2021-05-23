@@ -451,7 +451,6 @@ class EtherpadRig {
 
     http.createServer(function (req, res) {
       console.log ("Processing request: " + req.url);
-      console.log (req);
 
       if (isEmpty (req.headers)==true) {
         res.writeHead(200, {'Content-Type': 'application/json'});
@@ -486,7 +485,7 @@ class EtherpadRig {
 
       console.log ("Checking url ...");
 
-      var url = new URL (req.url);
+      var url = new URL ("http://localhost/"+req.url);
 
       if (req.url=="/stats") {
         etherpad.getStats().then ((data) => {
