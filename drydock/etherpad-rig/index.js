@@ -639,12 +639,32 @@ class EtherpadRig {
 
         console.log ("Loading: " + aName + " ...");
 
+        if (aName=="") {
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.write(JSON.stringify({"error": "Error loading file, no filename provided"}));
+          return;          
+        }
+
         fs.readFile('data/' + aName, function(err, fileContent){
           if (err) {
             res.writeHead(200, {'Content-Type': 'application/json'});
             res.write(JSON.stringify({"error": "Error loading file"}));
           } else {
-            let json=JSON.parse (fileContent);
+            if (fileContent=="") 
+            {
+              res.writeHead(200, {'Content-Type': 'application/json'});
+              res.write(JSON.stringify({"error": "Error loading file, no content"}));
+              return;
+            }
+            let json={};
+            try {
+              json=JSON.parse (fileContent);
+            }catch(err) {
+              res.writeHead(200, {'Content-Type': 'application/json'});
+              res.write(JSON.stringify({"error": "Error loading file, invalid content"}));
+              return;              
+            }
+            
             res.write(JSON.stringify({"ok": "all good", "data": json}));
             res.end();          
           }
