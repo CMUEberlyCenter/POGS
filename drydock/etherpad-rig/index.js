@@ -519,7 +519,7 @@ class EtherpadRig {
       }  
 
       if (req.url.indexOf ("/getsession")!=-1) {
-        var aSession=url.searchParams.get('session');
+        var aSession=req.url.searchParams.get('session');
 
         let cachedSession=etherpad.getSession (aSession);
 
@@ -561,8 +561,8 @@ class EtherpadRig {
       if (req.url.indexOf ("/copy")!=-1) {
         console.log ("Creating copy of pad ...");
 
-        var aFrom=url.searchParams.get('from');
-        var aTo=url.searchParams.get('to');
+        var aFrom=req.urlsearchParams.get('from');
+        var aTo=req.url.searchParams.get('to');
 
         etherpad.copyPad(aFrom,aTo).then ((data) => {
           res.writeHead(200, {'Content-Type': 'application/json'});
@@ -580,7 +580,7 @@ class EtherpadRig {
       if (req.url.indexOf ("/checkname")!=-1) {
         console.log ("Checking pad name ...");
 
-        var aName=url.searchParams.get('name');
+        var aName=req.url.searchParams.get('name');
 
         let cachedSession=etherpad.getSession (aName);
 
@@ -636,7 +636,7 @@ class EtherpadRig {
         
         var fileJSON=[];
 
-        var aName=url.searchParams.get('name');
+        var aName=req.url.searchParams.get('name');
 
         console.log ("Loading: " + aName + " ...");
 
@@ -688,9 +688,9 @@ class EtherpadRig {
       if (req.url.indexOf ("/createsession")!=-1) {
         console.log ("Creating new session ...");
 
-        var aName=url.searchParams.get('name');
-        var aFull=url.searchParams.get('full');
-        var aText=url.searchParams.get('text');
+        var aName=req.url.searchParams.get('name');
+        var aFull=req.url.searchParams.get('full');
+        var aText=req.url.searchParams.get('text');
 
         let cachedSession=etherpad.getSession (aName);
 
