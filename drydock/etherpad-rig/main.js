@@ -511,7 +511,7 @@ function showFiles () {
   function loadScript () {
     console.log ("loadScript ()");
    
-    var fileName=("#scripts").val();
+    var fileName=$("#scripts").val();
 
     if (fileName=="") {
       alert ("Please enter or choose a filename first");
