@@ -449,9 +449,9 @@ class EtherpadRig {
 
     this.init ();
 
-    http.createServer(function (req, res) {      
+    http.createServer(function (req, res) {
       console.log ("Processing request: " + req.url);
-      console.log (req.headers);
+      console.log (req);
 
       if (isEmpty (req.headers)==true) {
         res.writeHead(200, {'Content-Type': 'application/json'});
