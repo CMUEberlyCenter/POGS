@@ -484,7 +484,9 @@ class EtherpadRig {
 
       res.setHeader ('Access-Control-Allow-Origin','*');
 
-      var url = new URL (req.url,'http://www.example.com/dogs');
+      console.log ("Checking url ...");
+
+      //var url = new URL (req.url,'http://www.example.com/dogs');
 
       if (req.url=="/stats") {
         etherpad.getStats().then ((data) => {
@@ -715,6 +717,8 @@ class EtherpadRig {
         });
         return;
       }
+
+      console.log ("bump");
 
       serve(req, res, finalhandler(req, res));
     }).listen(9000);
