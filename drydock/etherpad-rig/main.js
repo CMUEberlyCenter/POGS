@@ -532,7 +532,7 @@ function showFiles () {
 
     $.ajax({
       type: "POST",
-      url: "/savescript?name="+filename,
+      url: "/savescript/?name="+filename,
       data: JSON.stringify(script),
       contentType: "application/json",
       success: function (data) {
@@ -560,7 +560,7 @@ function showFiles () {
 
     $.ajax({
       type: "GET",
-      url: "/loadscript?name="+$("#scripts").val(),
+      url: "/loadscript/?name="+$("#scripts").val(),
       success: function (data) {
         if (data.error) {
           setStatus (data.error);
@@ -585,7 +585,7 @@ function showFiles () {
    
     $.ajax({
       type: "GET",
-      url: "/listscripts",
+      url: "/listscripts/",
       success: function (data) {
         if (data.error) {
           setStatus (data.error);
@@ -915,7 +915,7 @@ function init () {
 
   $.ajax({
     type: "GET",
-    url: "/stats",
+    url: "/stats/",
     success: function (data) {
       if (data.error) {
         console.log (data);
@@ -923,7 +923,7 @@ function init () {
       } else {
         $.ajax({
           type: "GET",
-          url: "/settings",
+          url: "/settings/",
           success: function (data) {
             settings=data;
             $("#scrim").hide ();
