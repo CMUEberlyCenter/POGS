@@ -682,10 +682,10 @@ function showFiles () {
     }
     
     if (com=="replaceAll") {
-	  if (arg1=="") {
-	    alert ("Please provide a first argument");
-	    return;
-	  }
+	    if (arg1=="") {
+	      alert ("Please provide a first argument");
+	      return;
+	    }
 
       if (arg2=="") {
         alert ("Please provide a second argument");

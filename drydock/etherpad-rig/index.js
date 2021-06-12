@@ -488,7 +488,7 @@ class EtherpadRig {
 
       var url = new URL ("http://localhost/"+req.url);
 
-      if (req.url=="/stats") {
+      if (req.url.indexOf ("/stats")!=-1) {
         etherpad.getStats().then ((data) => {
           res.writeHead(200, {'Content-Type': 'application/json'});
           res.write(JSON.stringify(data));
@@ -535,21 +535,21 @@ class EtherpadRig {
         return;  
       }  
 
-      if (req.url=="/settings") {
+      if (req.url.indexOf ("/settings")!=-1) {
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.write(JSON.stringify(settings));
         res.end();
         return;  
       }  
 
-      if (req.url=="/data") {
+      if (req.url.indexOf ("/data")!=-1) {
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.write(JSON.stringify(etherData));
         res.end();
         return;  
       }  
 
-      if (req.url=="/pads") {
+      if (req.url.indexOf ("/pads")!=-1) {
         etherpad.listPads(null).then ((data) => {
           res.writeHead(200, {'Content-Type': 'application/json'});
           res.write(JSON.stringify(data));
