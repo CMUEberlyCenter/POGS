@@ -341,6 +341,12 @@ function executeCommand (aCommand) {
 function load () {
   console.log ("load ()");
 
+  var prot="http://";
+
+  if (window.location.href.indexOf ("https")!=-1) {
+    prot="https://";
+  }
+
   var urlParser=new URL (window.location.href);
   var searchParams=urlParser.searchParams;
   var fileName='sample-script.json';
@@ -352,7 +358,7 @@ function load () {
     }
   }  
 
-  var jsonURL="http://" + urlParser.hostname + ":9000/loadscript?name=" + fileName;
+  var jsonURL=prot + urlParser.hostname + ":9000/loadscript?name=" + fileName;
 
   console.log ("Loading script from: " + jsonURL);
  
