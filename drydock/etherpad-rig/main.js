@@ -458,7 +458,7 @@ function showScriptRunner () {
     }
 
     //var monitorURL=prot+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=false&showControls=false&file="+filename;
-    var monitorURL=prot+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&file="+encodeURIComponent(filename)+"?chatAlwaysVisible=false&noColors=false";
+    var monitorURL=prot+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&file="+encodeURIComponent(filename)+"&chatAlwaysVisible=false&noColors=false";
 
     $("#etherpad").attr("src",monitorURL); 
   }
