@@ -411,6 +411,7 @@ class EtherpadRig {
     
     this.etherpad = api.connect({
       apikey: settings.apikey,
+      https: settings.https,
       host: settings.host,
       port: settings.port
     });

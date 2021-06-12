@@ -339,10 +339,18 @@ function showScriptRunner () {
     $("#step2").hide ();
     $("#step3").show ();
 
-    $("#session1url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name1);
-    $("#session2url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name2);
-    $("#session3url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name3);
-    $("#session4url").text ("http://"+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name4);
+    var prot="http://";
+
+    if (settings.https) {
+      if (settings.https==true) {
+        prot="https://";
+      }
+    }
+
+    $("#session1url").text (prot+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name1);
+    $("#session2url").text (prot+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name2);
+    $("#session3url").text (prot+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name3);
+    $("#session4url").text (prot+settings.host+":"+settings.portmanager+"/participant.html?session="+sessionName+"&username="+name4);
   }
 
   /**
@@ -351,7 +359,15 @@ function showScriptRunner () {
   function startSessions () {
     console.log ("startSessions ()");
 
-    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+sessionName+"?userName=Monitor&showChat=true&showControls=false";
+    var prot="http://";
+
+    if (settings.https) {
+      if (settings.https==true) {
+        prot="https://";
+      }
+    }
+
+    var monitorURL=prot+settings.host+":"+settings.port+"/p/"+sessionName+"?userName=Monitor&showChat=true&showControls=false";
 
     $("#sessioninfo").text(monitorURL);
 
@@ -373,7 +389,15 @@ function showScriptRunner () {
         if (data.error) {
           setStatus (data.error);
         } else {
-          var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=true&showControls=false";
+          var prot="http://";
+
+          if (settings.https) {
+            if (settings.https==true) {
+              prot="https://";
+            }
+          }
+
+          var monitorURL=prot+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=true&showControls=false";
 
           $("#sessioninfo").text(monitorURL);
 
@@ -425,8 +449,16 @@ function showScriptRunner () {
 
     var testPad=uuidv4();
         
-    //var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=false&showControls=false&file="+filename;
-    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&file="+encodeURIComponent(filename)+"?chatAlwaysVisible=false&noColors=false";
+    var prot="http://";
+
+    if (settings.https) {
+      if (settings.https==true) {
+        prot="https://";
+      }
+    }
+
+    //var monitorURL=prot+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=false&showControls=false&file="+filename;
+    var monitorURL=prot+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&file="+encodeURIComponent(filename)+"?chatAlwaysVisible=false&noColors=false";
 
     $("#etherpad").attr("src",monitorURL); 
   }
@@ -446,8 +478,16 @@ function showScriptRunner () {
     
     var testPad=uuidv4();
 
-    //var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=false&showControls=false&file="+filename;
-    var monitorURL="http://"+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&file="+(filename);
+    var prot="http://";
+
+    if (settings.https) {
+      if (settings.https==true) {
+        prot="https://";
+      }
+    }    
+
+    //var monitorURL=prot+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&showChat=false&showControls=false&file="+filename;
+    var monitorURL=prot+settings.host+":"+settings.port+"/p/"+testPad+"?userName=Monitor&file="+(filename);
         
     setStatus (monitorURL);
   }
@@ -765,7 +805,6 @@ function showFiles () {
 
     var div = document.getElementById("timestamp-"+actionId);
     setTimeout(function() {
-
       div.focus();
     }, 0);
   }
