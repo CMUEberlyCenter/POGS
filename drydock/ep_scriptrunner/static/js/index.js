@@ -343,6 +343,8 @@ function load () {
 
   var prot="http://";
 
+  console.log ("Checking: " + window.location.href);
+
   if (window.location.href.indexOf ("https")!=-1) {
     prot="https://";
   }
@@ -352,6 +354,7 @@ function load () {
   var fileName='sample-script.json';
   
   for (let p of searchParams) {
+    console.log ("Inspecting param: " + p);
     if (p=="file") {      
       fileName=searchParams [p];
       console.log ("Setting filename to: " + filename);
