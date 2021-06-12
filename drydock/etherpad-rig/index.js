@@ -408,12 +408,12 @@ class EtherpadRig {
     settings = JSON.parse(rawSettings);
 
     console.log (settings);
-    
+
     this.etherpad = api.connect({
       apikey: settings.apikey,
-      https: settings.https,
       host: settings.host,
-      port: settings.port
+      port: settings.port,
+      ssl: settings.https
     });
 
     this.createAuthor ("Monitor").then (() => {
